@@ -1,0 +1,79 @@
+﻿type,JumpTableID,英文名,中文名,重要度,说明
+0,1,InvokeAnimCancelStart_R1_R2_LightKick_HeavyKick,R1/R2 取消窗口开始,★★★★★,动画进入可被打断成攻击的窗口
+0,3,InvokeShieldBlock,★ 触发盾防御 (ArgB=角度),★★★★★,ArgB 是防御角度 (如 90°)
+0,5,InvokeParriedState,★ 进入被弹反状态 (ArgC),★★★★★,被弹刀的反应状态
+0,25,InvokeAnimCancelStart_SpMove_Backstep_Rolling_Jump,闪步/翻滚/跳跃 取消窗口开始,★★★★★,
+0,26,End If Dodge Queued,缓冲: 闪避 → 取消,★★★★★,极重要：决定闪避能否衔接
+0,34,InvokeAnimCancelEnd_General,通用 取消窗口,★★★★★,任意输入都可取消
+0,87,InvokeAttackAction_Complex,触发攻击判定 (复杂),★★★★★,动作的伤害判定开关
+0,103,InvokeAnimCancelEnd_L2,L2 招式 取消窗口 (variant),★★★★★,同 118
+0,115,InvokeAnimCancelEnd_R1_LightKick,R1 攻击 取消窗口,★★★★★,玩家按 R1 在此区间立刻进入下一段攻击
+0,116,InvokeAnimCancelEnd_R2_HeavyKick,R2 攻击 取消窗口,★★★★★,按 R2 立刻衔接
+0,117,InvokeAnimCancelEnd_L1,L1 防御 取消窗口,★★★★★,按 L1 立刻进入防御/弹反
+0,118,InvokeAnimCancelEnd_L2,L2 招式 取消窗口,★★★★★,按 L2 立刻使用招式
+0,119,TryToInvokeForceParryMode,★ 强制进入弹反模式,★★★★★,战斗待机里普遍存在
+1,,InvokeAttackBehavior,触发攻击行为 (BehaviorJudgeID),★★★★★,通过 BehaviorJudgeID 调用攻击判定行为
+67,,AddSpEffect,添加状态效果 (SpEffectID),★★★★★,霸体/无敌/无视碰撞 等通过 SpEffectID 实现
+0,4,End If RH Attack Queued,缓冲: 右手攻击 → 取消,★★★★,队列里有右手攻击就立刻退出当前动作
+0,6,InvokeAnimCancelEndWithKeyboardKey,通用 取消窗口 (键盘),★★★★,键盘按键触发取消
+0,7,Disable Turning,禁止转身,★★★★,
+0,8,Flag As Dodging,标记为闪避中,★★★★,
+0,9,InvokeAnimCancelStart_L1_L2,L1/L2 取消窗口开始,★★★★,
+0,11,End If LS Move Queued,缓冲: 左摇杆移动 → 取消,★★★★,队列里有移动输入就退出
+0,12,InvokeDeath,★ 触发死亡,★★★★,
+0,16,End If LH Attack Queued,缓冲: 左手攻击 → 取消,★★★★,
+0,21,InvokeAnimCancelStart_Guard,防御 取消窗口开始,★★★★,
+0,22,End If Guard Queued,缓冲: 防御 → 取消,★★★★,
+0,31,InvokeAnimCancelEnd_UseItem,道具使用 取消窗口,★★★★,按 R3 用道具
+0,47,ExtraJumptable1_InvokeDeath2,★ 死亡 (扩展2),★★★★,
+0,67,InvokeThrowStart2,★ 投掷起手2,★★★★,
+0,68,InvokeHitSwing_ThrowStart1,★ 投掷起手1+挥击,★★★★,
+0,69,InvokeThrowType5,★ 投掷类型5,★★★★,
+0,70,InvokeThrowType4,★ 投掷类型4,★★★★,
+0,72,InvokeKnockbackValue,★ 击退数值,★★★★,
+0,89,Disable All Movement,禁止全部移动,★★★★,
+0,95,InvokePlayerDeathLight,★ 玩家死亡(轻),★★★★,
+0,104,InvokeAnimCancelEnd_L2_HksSet2011,L2 招式 取消窗口 (HKS 2011),★★★★,HKS脚本2011组的L2取消
+0,105,InvokeAnimCancelStart_L2,L2 取消窗口开始,★★★★,
+0,107,InvokeAnimCancelEnd_UseItem_ByGoodsParam,道具 取消窗口 (按物品),★★★★,由物品类型决定
+0,111,InvokeAnimCancelStart_EmergencyStep,紧急步 取消窗口开始,★★★★,
+0,112,InvokeAnimCancelEnd_EmergencyStep,紧急步 取消窗口,★★★★,
+0,121,InvokeAnimCancelEndExtra_L1_L2_ByWeaponParam,L1/L2 取消窗口 (按武器),★★★★,
+2,,InvokeBulletBehavior,触发子弹行为,★★★★,投射物/子弹
+5,,InvokeCommonBehavior,触发通用行为,★★★★,通用行为图调用
+224,,SetTurnSpeed,设置转身速度,★★★★,TurnSpeed 度/秒
+320,,ActionRequest,动作请求 (Act1/2/3),★★★★,向行为图请求特定动作
+760,,SetMovementMultiplier,移动速度倍率,★★★★,
+0,10,InvokeAnimCancelStart_MagicR_MagicL,魔法 取消窗口开始,★★★,
+0,19,DisableMapHit,禁用场景碰撞,★★★,
+0,27,SetNoGravity,无重力,★★★,
+0,30,InvokeAnimCancelStart_UseItem,道具 取消窗口开始,★★★,
+0,32,End If Weapon Switch Queued,缓冲: 切武器 → 取消,★★★,
+0,90,Limit Move Speed To Walk,限速到走路,★★★,
+0,91,Limit Move Speed To Dash,限速到冲刺,★★★,
+0,108,InvokeAnimCancelStart_UseItem_ByGoodsParam,道具开始 (按物品),★★★,
+0,110,InvokeDisableDirectionChange,禁止方向改变,★★★,
+0,120,InvokeAnimCancelStart_L1_L2_ByWeaponParam,L1/L2 开始 (按武器),★★★,
+66,,AddSpEffect_Multiplayer,添加状态效果·多人,★★★,
+112,,SpawnFFX_ByFloor,粒子·按地面材质,★★★,
+128,,PlaySound_General,音效·通用,★★★,SoundType + SoundID
+129,,PlaySound_ByStateInfo,音效·按状态信息,★★★,
+130,,PlaySound_DummyPoly_PlayerVoice,音效·虚拟点(玩家语音),★★★,
+131,,PlaySound_ByDummypoly,音效·虚拟点,★★★,
+132,,PlaySound_Weapon,音效·武器,★★★,
+226,,SetKnockbackPercent,设置击退百分比,★★★,
+232,,AllowVerticalTorsoAim,允许躯干垂直瞄准,★★★,
+302,,AddSpEffect_DragonForm,状态效果·龙形态,★★★,
+401,,AddSpEffect_Multiplayer_401,添加状态效果·多人401,★★★,
+605,,BlendToIdleOrMovementAnim,混合到待机/移动,★★★,
+792,,InvokeFootSfxParam_Entity,脚步音效参数(实体),★★★,
+0,23,End If AI ComboAttack Queued,AI缓冲: 连击 → 取消,★★,
+0,78,End If AI Move Queued,AI缓冲: 移动 → 取消,★★,
+0,79,End If AI Step Queued,AI缓冲: 步伐 → 取消,★★,
+0,86,End If AI Attack Queued,AI缓冲: 攻击 → 取消,★★,
+16,,Blend,动画混合,★★,
+95,,SpawnOneShotFFX_Ember,粒子·一次性(Ember),★★,
+96,,SpawnOneShotFFX,粒子·一次性,★★,
+145,,InvokeRumbleCam_Global1,震屏·全局1,★,
+155,,CameraModule4,相机模块4,★,
+607,,FacialExpressionAdditive,面部表情叠加,★,

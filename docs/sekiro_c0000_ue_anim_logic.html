@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sekiro C0000 UE 动画状态机逻辑图</title>
+  <style>
+    :root {
+      --bg: #f4ede1;
+      --bg-accent: #ead6bb;
+      --panel: rgba(255, 250, 243, 0.86);
+      --panel-strong: rgba(255, 252, 247, 0.96);
+      --text: #2b211b;
+      --muted: #6d5d51;
+      --accent: #8f2f24;
+      --accent-soft: #c96f4c;
+      --border: rgba(76, 47, 31, 0.16);
+      --shadow: 0 18px 48px rgba(49, 27, 17, 0.12);
+      --code-bg: #1f1a17;
+      --code-text: #f6eee6;
+      --link: #7e241c;
+      --link-hover: #b44430;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(201, 111, 76, 0.18), transparent 24rem),
+        radial-gradient(circle at bottom left, rgba(143, 47, 36, 0.14), transparent 20rem),
+        linear-gradient(180deg, var(--bg) 0%, #efe6d8 100%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--link-hover);
+    }
+
+    code,
+    pre {
+      font-family: "JetBrains Mono", "Consolas", "Cascadia Mono", monospace;
+    }
+
+    .shell {
+      width: min(1600px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(250, 242, 231, 0.9));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(143, 47, 36, 0.1);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar h1 {
+      margin: 0 0 12px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .sidebar p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .meta-card,
+    .toc-card {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: var(--panel-strong);
+      border: 1px solid rgba(76, 47, 31, 0.08);
+    }
+
+    .meta-card strong,
+    .toc-card strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .meta-card p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .toc-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toc-links a {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 12px;
+      color: var(--text);
+      transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .toc-links a:hover {
+      background: rgba(143, 47, 36, 0.08);
+      transform: translateX(3px);
+    }
+
+    .toc-links a.toc-h3 {
+      padding-left: 20px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(255, 251, 245, 0.72);
+      box-shadow: 0 8px 24px rgba(49, 27, 17, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .status {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(143, 47, 36, 0.2);
+      background: rgba(255, 250, 245, 0.92);
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(143, 47, 36, 0.36);
+      background: rgba(255, 244, 237, 0.96);
+    }
+
+    .article-shell {
+      padding: 32px 34px 40px;
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(249, 243, 235, 0.9));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .notice {
+      margin: 0 0 22px;
+      padding: 16px 18px;
+      border-left: 4px solid var(--accent-soft);
+      border-radius: 0 16px 16px 0;
+      background: rgba(201, 111, 76, 0.08);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .article h1,
+    .article h2,
+    .article h3 {
+      line-height: 1.25;
+      scroll-margin-top: 24px;
+    }
+
+    .article h1 {
+      margin: 0 0 18px;
+      font-size: 42px;
+      letter-spacing: -0.02em;
+    }
+
+    .article h2 {
+      margin: 42px 0 16px;
+      padding-top: 12px;
+      font-size: 28px;
+      border-top: 1px solid rgba(76, 47, 31, 0.1);
+    }
+
+    .article h3 {
+      margin: 28px 0 12px;
+      font-size: 20px;
+    }
+
+    .article p,
+    .article li {
+      line-height: 1.82;
+      font-size: 16px;
+    }
+
+    .article ul {
+      margin: 0 0 18px 20px;
+      padding: 0;
+    }
+
+    .article li + li {
+      margin-top: 6px;
+    }
+
+    .article code {
+      padding: 0.18em 0.42em;
+      border-radius: 8px;
+      background: rgba(31, 26, 23, 0.08);
+      font-size: 0.92em;
+    }
+
+    .article pre {
+      margin: 18px 0 22px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      overflow: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .article pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    .mermaid-wrap {
+      margin: 18px 0 22px;
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(76, 47, 31, 0.08);
+      background: #fffdfa;
+      overflow: auto;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .mermaid {
+      min-width: max-content;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      padding-top: 18px;
+      border-top: 1px dashed rgba(76, 47, 31, 0.16);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1120px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100vw - 20px, 100%);
+        padding-top: 14px;
+      }
+
+      .article-shell {
+        padding: 24px 18px 28px;
+        border-radius: 22px;
+      }
+
+      .topbar {
+        padding: 14px 16px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .sidebar {
+        padding: 18px;
+        border-radius: 22px;
+      }
+
+      .sidebar h1,
+      .article h1 {
+        font-size: 30px;
+      }
+
+      .article h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="eyebrow">Sekiro / C0000</div>
+      <h1>UE 动画状态机逻辑图</h1>
+      <p>这是把原来的 Markdown 文档做成单文件 HTML 的预览版，方便直接在浏览器里看 Mermaid 图和整体结构。</p>
+
+      <div class="meta-card">
+        <strong>文档来源</strong>
+        <p><code>docs/sekiro_c0000_ue_anim_logic.md</code></p>
+      </div>
+
+      <div class="meta-card">
+        <strong>预览说明</strong>
+        <p>图表通过 Mermaid 渲染。首次打开时需要联网加载脚本；如果网络不可用，页面会退回到普通代码块显示。</p>
+      </div>
+
+      <div class="toc-card">
+        <strong>目录</strong>
+        <nav id="toc-links" class="toc-links"></nav>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div class="status">HTML 预览版，适合直接双击打开或浏览器查看。</div>
+        <div class="toolbar">
+          <button class="button" type="button" id="print-button">打印 / 导出 PDF</button>
+          <a class="button" href="./sekiro_c0000_ue_anim_logic.md">查看 Markdown 原文</a>
+        </div>
+      </div>
+
+      <section class="article-shell">
+        <div class="notice" id="runtime-notice">
+          页面会先把嵌入的 Markdown 转成 HTML，再把 Mermaid 代码块渲染成图。
+        </div>
+        <article id="article" class="article"></article>
+        <div class="footer-note">
+          这个 HTML 是给本地查阅用的静态预览文件，不会修改 UE 工程里的任何动画资产或蓝图逻辑。
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script id="md-source" type="text/plain">
+# Sekiro C0000 UE 动画状态机逻辑图
+
+这份文档描述的是当前 `E:\UEProj\Sekiro\SekiroDemo` 工程里的 UE 预览实现，不是只狼原版 Havok 状态机本体。
+
+## 总体机制
+
+- 输入或调试事件先进入 `ASekiroC0000PreviewCharacter`
+- C++ 把 Tick 和事件转发到 `PreviewCharacter.lua`
+- Lua 不直接切 AnimGraph 状态，而是写 AnimBP 实例变量
+- AnimBP transition rules 读取这些变量后，才真正进入目标状态
+
+关键文件：
+
+- `E:\UEProj\Sekiro\SekiroDemo\Source\SekiroDemo\SekiroC0000PreviewCharacter.cpp`
+- `E:\UEProj\Sekiro\SekiroDemo\Content\Script\Sekiro\C0000\PreviewCharacter.lua`
+- `E:\UEProj\Sekiro\SekiroDemo\Content\Script\Sekiro\C0000\EventSpecs.lua`
+- `E:\UEProj\Sekiro\SekiroDemo\Saved\SekiroImportReports\c0000_master_animbp_mapping.json`
+- `E:\UEProj\Sekiro\SekiroDemo\Saved\SekiroImportReports\c0000_transition_effect_tuning_report.json`
+
+## 总流程图
+
+```mermaid
+flowchart TD
+    A["WASD / Shift 或 TriggerPreviewSekiroEvent(EventName)"] --> B["C++ 预览角色"]
+    B --> C["UpdatePreviewInputStateFromController()"]
+    B --> D["StepPreviewRuntime(DeltaSeconds)"]
+    B --> E["TriggerPreviewSekiroEvent(EventName)"]
+
+    D --> F["Lua ReceiveTick(delta_seconds)"]
+    E --> G["Lua TriggerSekiroEvent(event_name)"]
+
+    F --> H["sync_polled_input()"]
+    F --> I["apply_movement_input()"]
+    F --> J["update_runtime_variables()"]
+    F --> K["flush_pending_pulses()"]
+
+    G --> L["try_trigger_event()"]
+    J --> L
+
+    L --> M{"事件类型"}
+    M -->|StandMovePulseEvents| N["写 Req_* / Return_*"]
+    M -->|PulseOnlyEvents| O["写循环/同步脉冲"]
+    M -->|ActionIdleEvents| P["Req_W_Attack3049 + StateStateId_StandMoveableAction"]
+    M -->|ActionMoveEvents| Q["Req_W_ChargeShotRightEnd + StateStateId_StandMoveableAction"]
+    M -->|OverwriteLowerEvents| R["写 Lower Overwrite 请求"]
+
+    J --> S["持续写入 MoveType / StanceMoveType / MoveSpeedIndex / MoveDirection / Selector_* / StartTime_*"]
+    N --> K
+    O --> K
+    P --> K
+    Q --> K
+    R --> K
+
+    K --> T["AnimBP 实例变量"]
+    S --> T
+    T --> U["AnimBP Transition Rules"]
+    U --> V["Sekiro_MasterSubset_SM"]
+    V --> W["StandMove_SM / StandMoveableAction_SM / StandMoveUpper_SM / StandMoveLower_SM"]
+```
+
+## 顶层状态机
+
+顶层主状态机是 `Sekiro_MasterSubset_SM`，入口状态是 `StandMove`。
+
+```mermaid
+flowchart LR
+    A[StandMove]
+    B[StandMoveableAction]
+    C[StandMoveOverwrite]
+
+    A -->|"Req_W_Attack3050 或 Req_W_Attack3049"| B
+    B -->|"Return_To_StandMove"| A
+
+    A -->|"Req_W_Attack3052 或 Req_W_ChargeShotRightEnd"| C
+    C -->|"Return_To_StandMove"| A
+
+    B -->|"Req_W_ChargeShotRightEnd"| C
+    C -->|"Return_To_StandMoveableAction_Idle"| B
+```
+
+对应关系：
+
+- `StandMove -> StandMoveableAction`
+  由 `Req_W_Attack3050` 或 `Req_W_Attack3049` 触发
+- `StandMoveableAction -> StandMove`
+  由 `Return_To_StandMove` 触发
+- `StandMove -> StandMoveOverwrite`
+  由 `Req_W_Attack3052` 或 `Req_W_ChargeShotRightEnd` 触发
+- `StandMoveOverwrite -> StandMove`
+  由 `Return_To_StandMove` 触发
+- `StandMoveOverwrite -> StandMoveableAction`
+  由 `Return_To_StandMoveableAction_Idle` 触发
+
+## StandMove_SM 移动主干
+
+`StandMove_SM` 是 `StandMove` 下面的子状态机，入口状态是 `StandMoveLoop`。
+
+```mermaid
+flowchart LR
+    L0[StandMoveLoop]
+    L1[StandMoveStart]
+    L2[StandWalkStop]
+    L3[StandRunStop]
+    L4[StandQuickTurnRight180]
+    L5[StandQuickTurnLeft180]
+    L6[StandMoveStartFromSprint]
+    L7[StandMoveLoopFromSprint]
+
+    L0 -->|"Req_W_Event3018"| L1
+    L1 -->|"Req_W_Event3019"| L0
+
+    L0 -->|"Req_W_Event3026"| L2
+    L0 -->|"Req_W_Event3027"| L3
+    L0 -->|"Req_W_Event3028"| L4
+    L0 -->|"Req_W_Event3029"| L5
+
+    L0 -->|"Req_W_WideshotRightStart_mirror"| L6
+    L6 -->|"Req_a000_00000000_End"| L7
+
+    L2 -->|"Return_To_StandMove"| L0
+    L3 -->|"Return_To_StandMove"| L0
+    L4 -->|"Return_To_StandMove"| L0
+    L5 -->|"Return_To_StandMove"| L0
+```
+
+Lua 在 `update_runtime_variables()` 里大致按这个顺序决定触发什么事件：
+
+```mermaid
+flowchart TD
+    A["读取输入和速度"] --> B{"当前是否刚开始移动"}
+    B -->|是| C["W_StandMoveLoop 或 W_StandMoveStart"]
+    B -->|否| D{"是否从 Sprint 退出"}
+
+    D -->|是| E["W_StandMoveStartFromSprint / W_StandRunStop / W_StandWalkStop"]
+    D -->|否| F{"是否从移动切回静止"}
+
+    F -->|是| G["W_StandRunStop / W_StandWalkStop / QuickTurn"]
+    F -->|否| H{"是否移动中发生方向/速度变化"}
+
+    H -->|是| I["W_StandMoveLoopSync 或 Move QuickTurn"]
+    H -->|否| J["维持当前循环"]
+```
+
+## 动作状态机选态
+
+这部分最关键的点是：
+
+- `StandMoveableAction_SM` 入口是 `StandMoveableActionIdle`
+- `StandMoveUpper_SM` 入口是 `StandMoveUpperIdle`
+- 它们跳去哪个具体动作，不是靠一堆 `Req_*` bool 分别控制
+- 而是靠 `StateStateId_StandMoveableAction == 某个整数`
+
+```mermaid
+flowchart TD
+    A["Lua 触发 Idle 动作事件"] --> B["Req_W_Attack3049"]
+    A --> C["StateStateId_StandMoveableAction = N"]
+    B --> D["顶层进入 StandMoveableAction"]
+    C --> E["StandMoveableActionIdle 根据 state_id 选具体状态"]
+    E --> F["ItemPillTonic / DeflectGuardToStand / SubWeaponExpand ..."]
+    F --> G["到时后发 Return_To_StandMoveableAction_Idle"]
+    G --> H["再发 Return_To_StandMove"]
+```
+
+```mermaid
+flowchart TD
+    A["Lua 触发 Move 动作事件"] --> B["Req_W_ChargeShotRightEnd"]
+    A --> C["StateStateId_StandMoveableAction = N"]
+    B --> D["顶层进入 StandMoveOverwrite"]
+    C --> E["StandMoveUpperIdle 根据 state_id 选具体状态"]
+    E --> F["ItemPillTonicMove / DeflectGuardToStandMove / SubWeaponExpandMove ..."]
+    F --> G["到时后发 Return_To_StandMove"]
+```
+
+常见例子：
+
+- `state_id = 0`
+  对应 `ItemPillTonic` 或 `ItemPillTonicMove`
+- `state_id = 120`
+  对应 `DeflectGuardToStand` 或 `DeflectGuardToStandMove`
+- `state_id = 133`
+  对应 `SubWeaponExpand` 或 `SubWeaponExpandMove`
+
+## 变量职责拆分
+
+### 1. 真正决定切到哪个状态的变量
+
+- `Req_*`
+- `Return_*`
+- `StateStateId_StandMoveableAction`
+
+### 2. 主要负责过渡样式和运动参数的变量
+
+- `Selector_UseTransitionEffect`
+- `Selector_UseStaterToStateTransitionEffect`
+- `StartTime_01`
+- `StartTime_02`
+- `StartTime_03`
+- `MoveType`
+- `StanceMoveType`
+- `MoveSpeedIndex`
+- `MoveSpeedLevel`
+- `MoveDirection`
+- `MoveAngle`
+- `TurnAngle`
+
+## 具体事件例子
+
+### 例 1：`W_ItemPillTonic`
+
+```mermaid
+sequenceDiagram
+    participant Input as 输入/调试事件
+    participant Lua as PreviewCharacter.lua
+    participant AnimBP as ABP_Sekiro_C0000_Master
+
+    Input->>Lua: W_ItemPillTonic
+    Lua->>Lua: queue Req_W_Attack3049
+    Lua->>AnimBP: StateStateId_StandMoveableAction = 0
+    AnimBP->>AnimBP: StandMove -> StandMoveableAction
+    AnimBP->>AnimBP: StandMoveableActionIdle -> ItemPillTonic
+    Lua->>Lua: 定时发 Return_To_StandMoveableAction_Idle
+    Lua->>Lua: 定时发 Return_To_StandMove
+    AnimBP->>AnimBP: 回到 StandMove
+```
+
+### 例 2：`W_ItemPillTonicMove`
+
+```mermaid
+sequenceDiagram
+    participant Input as 输入/调试事件
+    participant Lua as PreviewCharacter.lua
+    participant AnimBP as ABP_Sekiro_C0000_Master
+
+    Input->>Lua: W_ItemPillTonicMove
+    Lua->>Lua: queue Req_W_ChargeShotRightEnd
+    Lua->>AnimBP: StateStateId_StandMoveableAction = 0
+    AnimBP->>AnimBP: StandMove -> StandMoveOverwrite
+    AnimBP->>AnimBP: StandMoveUpperIdle -> ItemPillTonicMove
+    Lua->>Lua: 到时后发 Return_To_StandMove
+    AnimBP->>AnimBP: 回到 StandMove
+```
+
+## 当前实现的一个重要特点
+
+当前 Lua 默认：
+
+- `enable_move_loop_transition = true`
+- `enable_state_to_state_transition = true`
+- `enable_sprint_action = true`
+- `enable_item_use_move = true`
+- `enable_direct_locomotion_preview = false`
+
+因此当前预览实现里：
+
+- 静止开始移动时，常常直接走 `W_StandMoveLoop`
+- 不是每次都先走 `W_StandMoveStart`
+- 移动中的速度档或方向切换，会用 `W_StandMoveLoopSync`
+- 动作族切换时，`state_id` 负责“选哪个动作”，`Req_* / Return_*` 负责“什么时候进/什么时候退”
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    (function () {
+      const article = document.getElementById("article");
+      const tocLinks = document.getElementById("toc-links");
+      const notice = document.getElementById("runtime-notice");
+      const printButton = document.getElementById("print-button");
+      const source = document.getElementById("md-source").textContent.trim();
+
+      printButton.addEventListener("click", function () {
+        window.print();
+      });
+
+      function slugify(text, index) {
+        const slug = text
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\u4e00-\u9fa5]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        return slug || ("section-" + index);
+      }
+
+      function buildToc() {
+        const headings = article.querySelectorAll("h2, h3");
+        const used = new Set();
+
+        headings.forEach(function (heading, index) {
+          let id = heading.id || slugify(heading.textContent, index + 1);
+          while (used.has(id)) {
+            id += "-x";
+          }
+          used.add(id);
+          heading.id = id;
+
+          const link = document.createElement("a");
+          link.href = "#" + id;
+          link.textContent = heading.textContent;
+          link.className = heading.tagName.toLowerCase() === "h3" ? "toc-h3" : "toc-h2";
+          tocLinks.appendChild(link);
+        });
+      }
+
+      function renderFallback(reason) {
+        notice.textContent = reason;
+        article.innerHTML = "";
+
+        const title = document.createElement("h1");
+        title.textContent = "Markdown 原文";
+        article.appendChild(title);
+
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.textContent = source;
+        pre.appendChild(code);
+        article.appendChild(pre);
+      }
+
+      if (!window.marked) {
+        renderFallback("Markdown 渲染脚本加载失败，当前显示为原始文本。");
+        return;
+      }
+
+      marked.setOptions({
+        gfm: true,
+        breaks: false
+      });
+
+      article.innerHTML = marked.parse(source);
+
+      const mermaidBlocks = Array.from(article.querySelectorAll("pre code.language-mermaid"));
+      mermaidBlocks.forEach(function (block) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "mermaid-wrap";
+
+        const target = document.createElement("div");
+        target.className = "mermaid";
+        target.textContent = block.textContent;
+
+        wrapper.appendChild(target);
+        block.parentElement.replaceWith(wrapper);
+      });
+
+      buildToc();
+
+      if (!window.mermaid) {
+        notice.textContent = "Mermaid 脚本加载失败，正文已渲染，图表区域保留为代码块。";
+        return;
+      }
+
+      notice.textContent = "Markdown 已转换为 HTML，Mermaid 图表已启用。";
+
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "loose",
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#fff8f1",
+          primaryBorderColor: "#8f2f24",
+          primaryTextColor: "#2b211b",
+          lineColor: "#8f2f24",
+          secondaryColor: "#f4e6d8",
+          tertiaryColor: "#fffdfa",
+          fontFamily: "\"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+        },
+        flowchart: {
+          htmlLabels: true,
+          curve: "basis"
+        },
+        sequence: {
+          actorMargin: 70,
+          boxMargin: 16,
+          noteMargin: 10
+        }
+      });
+
+      mermaid.run({
+        querySelector: ".mermaid"
+      });
+    })();
+  </script>
+</body>
+</html>

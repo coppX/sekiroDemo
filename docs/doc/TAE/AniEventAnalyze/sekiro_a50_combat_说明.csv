@@ -1,0 +1,155 @@
+﻿Sekiro · a50.tae 战斗动画事件清单,
+本文档汇总 213 个 a050 战斗动画的事件触发、取消窗口、状态效果与判定时间。,
+,
+文档结构,
+本工作簿包含 4 个 sheet：,
+sekiro_a50_combat_说明,本页。各 sheet 用途、列含义、颜色编码、查询方法。
+sekiro_a50_combat_ani,213 个动画 × 26 个关键属性。横向对比。
+sekiro_a50_combat_anievent,8583 条事件长表。可按任意列筛选/排序。
+sekiro_a50_combat_trigger 字典,78 个核心事件类型（Trigger）的中英文对照和说明。
+,
+名词约定,
+动画 (Anim),游戏内一段连续的角色动作，以唯一 ID 标识（如 a050_300000）。
+事件 (Event),动画播放过程中在某个时间点（或时间段内）触发的指令。一段动画里有几十个事件。
+type,事件的主类型 ID。如 type=67 = AddSpEffect。
+JumpTable,type=0 是多路分发器，真正的功能由内部的 JumpTableID 决定。例：type=0 + JumpTableID=87 = InvokeAttackAction_Complex。
+取消窗口 (Cancel),在该时间段内，玩家按对应按键能立刻打断当前动画进入新动作。
+输入缓冲 (Buffer),玩家提前按键被记入队列，当动画播到此窗口时自动消化（不必再按）。
+SpEffect,状态效果 ID。霸体、无敌、抗硬直、移动加速等都通过这个 ID 加在角色身上。具体效果需查游戏的 SpEffectParam 表。
+,
+a050 内容结构,
+213 个动画按用途分为以下大类（见 矩阵总览 中的分组标题）：,
+,
+弹刀防御系统,"002xxx, 032xxx, 042xxx   —   战斗待机、防御状态下的移动与转身。"
+轻弹刀受伤反应,120xxx   —   玩家被敌人弹刀后的硬直反应（小/中/大/超大），按受击方向 F/L/R 区分。
+重弹刀受伤反应,130xxx   —   重型弹刀的硬直反应。
+空中弹刀,"122xxx, 132xxx   —   空中、落地、雷击充能等情境的弹刀反应。"
+游泳/潜水弹刀,"123xxx, 124xxx, 133xxx, 134xxx   —   水中和潜水中的弹刀反应。"
+弹刀再分配 (Repartition),"129xxx, 139xxx   —   弹刀的硬直分配子状态。"
+被弹刀 (Deflected),"140xxx, 150xxx   —   玩家弹刀失败被弹开。"
+弹刀破防,190xxx   —   弹刀架势条满后的破防与踉跄。
+弹刀防御状态切换,"203xxx, 206xxx   —   站立↔弹刀防御、空中↔弹刀、游泳↔弹刀的过渡。"
+★ 地面攻击连击,300xxx   —   GroundAttackCombo 1–5。地面状态的主攻击连段。
+★ 下蹲/冲刺攻击,"301xxx, 302xxx   —   CrouchAttack、SprintAttack。"
+重弹刀攻击,304xxx   —   HardDeflectAttack。
+被轻弹刀攻击,"305xxx, 306xxx   —   EasyDeflectedAtk、HardDeflectedAtk。"
+★ 空中攻击连击,308xxx   —   AirComboAttack 1–3。
+空中雷击受伤,308900–308911   —   受雷击时的反应。
+★ 钩绳坠落攻击,309xxx   —   WireFallAttack。
+★ 游泳攻击,310xxx   —   SwimAttack。
+★ 潜水攻击,311xxx   —   DiveAttack。
+★ 地面垫步攻击,313xxx   —   GroundStepAttack 各方向。
+★ 悬挂攻击,314xxx   —   HangAttack。
+★ 弹刀防御攻击,315xxx   —   DeflectGuardAttack。
+★ 老化地面攻击,390000   —   AgingGroundAttack。
+,
+★ 标记的分组为「角色主动攻击动画」。其余为防御/受击/状态切换。,
+,
+矩阵总览（Sheet 2）,
+每行一个动画。横向 26 列展示该动画的关键事件汇总。单元格内为时间段（如 0.30–0.93），表示该 Trigger 在此区间内生效；空白表示不生效。,
+,
+列含义,
+— 基础信息,
+动画 ID,a050_xxxxxx 格式。
+官方英文名,来自 HKS 状态机的状态名（如 GroundAttackCombo1）。
+中文名,英文名的翻译。
+时长(s),动画播放总时长。误差 ±0.1s。
+事件数,该动画包含的事件总数。
+,
+— 攻击 / 防御 / 弹反 触发,
+触发攻击 InvokeAttack,动画在该时间段发出伤害判定（敌人在判定盒内被击中）。
+盾防御 InvokeShieldBlock,动画在该时间段启用盾防御。ArgB = 防御角度。
+强制弹反 ForceParryMode,动画在该时间段处于强制弹反检测中。
+被弹反 ParriedState,动画为「被弹刀的反应」状态。
+死亡触发 InvokeDeath,触发角色死亡。
+,
+— 取消窗口（玩家按键 → 立即切换）,
+R1取消窗,在该窗口按 R1 立刻切到 R1 攻击。
+R2取消窗,在该窗口按 R2 立刻切到 R2 攻击。
+L1取消窗,在该窗口按 L1 立刻切到防御/弹刀。
+L2取消窗,在该窗口按 L2 立刻切到忍义手招式。
+闪步/翻滚/跳取消开始,在该窗口按闪避键立刻切到闪步、翻滚或跳跃。
+道具取消窗,在该窗口按道具键立刻使用道具。
+通用取消窗,任意输入都可在该窗口取消当前动画。
+,
+— 输入缓冲消费（队列里有键 + 处于此窗口 → 自动切换）,
+缓冲: 闪避→取消,玩家提前按了闪避，进入此窗口时自动闪避。
+缓冲: 移动→取消,推了摇杆，进入此窗口时自动移动。
+缓冲: RH攻击→取消,右手攻击键被缓冲。
+缓冲: LH攻击→取消,左手攻击键被缓冲。
+缓冲: 防御→取消,防御键被缓冲。
+缓冲: 切武器→取消,切武器键被缓冲。
+,
+— 移动 / 转身限制,
+禁止转身 DisableTurning,该窗口角色不能转向。
+禁止移动 DisableMovement,该窗口不能位移。
+无重力 NoGravity,该窗口不受重力。
+标记为闪避 FlagDodging,角色被标记为「闪避中」（其他系统据此判定无敌）。
+转身速度 SetTurnSpeed,设置转身速度（度/秒）。
+移动速度倍率 MoveMult,SetMovementMultiplier 调整移动速度。
+,
+— 状态效果,
+状态效果列表 SpEffectIDs,AddSpEffect 添加的所有 SpEffectID 汇总。这些 ID 决定霸体/无敌/抗硬直等效果。
+攻击行为数 AttackBehaviors,InvokeAttackBehavior 事件出现的次数。每次代表通过 BehaviorJudgeID 调用一次攻击判定。
+,
+,
+颜色编码,
+矩阵总览的单元格按列类别填充背景色：,
+黄色,攻击触发 (InvokeAttack)
+橙色,防御 / 弹反 / 死亡
+绿色,取消窗口 (Cancel)
+蓝色,输入缓冲 (Buffer)
+浅橙,移动 / 转身限制
+浅绿,状态效果 (SpEffect)
+,
+分组标题行：橙色 = 攻击类分组，蓝色 = 防御/受击/状态切换类分组。,
+,
+操作方式,
+• 前 5 列（动画 ID / 英文名 / 中文名 / 时长 / 事件数）和第 1 行已冻结，可横向滚动对比。,
+• 行筛选：选中第 1 行 → 数据 → 筛选，即可按列筛选。,
+• 对比示例：要看 GroundAttackCombo1–5 的伤害判定时间，按 ID 顺序看「触发攻击」列。,
+,
+事件明细（Sheet 3）,
+每行一个事件。8583 行长表。顶部已启用自动筛选。,
+,
+列含义,
+动画 ID / 官方英文名 / 中文名,事件所属的动画。
+动画时长,该动画的真实时长，用于判断事件是否超出。
+事件序号,事件在该动画 events 数组中的索引。
+开始(s) / 结束(s),事件的时间段。
+≤时长?,✓ = 事件 end 在动画时长内；★延续 = 事件 end > duration，表示该状态会延续到动画结束之后。
+type,事件主类型 ID。
+JumpTableID,type=0 时的子项 ID；其他 type 此列为空。
+Trigger 英文名,事件的官方名称。
+Trigger 中文名,中文翻译。
+重要度,★1 (演出层) ~ ★5 (核心战斗逻辑)。
+字段/参数,事件的 payload 字段（SpEffectID、ArgB、TurnSpeed 等）。
+,
+常见查询,
+找出所有「伤害判定开启」事件,
+,筛选 Trigger 英文名 = InvokeAttackAction_Complex 或 InvokeAttackBehavior。
+看某段动画的事件时间线,
+,筛选 动画 ID = a050_300000 → 按 开始(s) 升序排序。
+找延续到动画外的状态,
+,筛选 ≤时长? = ★延续。这些状态会在动画结束后继续生效，常用于动画衔接。
+看角色身上的 SpEffect 列表,
+,筛选 Trigger 英文名 = AddSpEffect → 看「字段/参数」列的 SpEffectID。
+只看核心战斗事件,
+,筛选 重要度 = ★★★★★。仅保留攻击/取消/弹反/SpEffect 等关键事件。
+,
+Trigger 字典（Sheet 4）,
+78 个核心 Trigger 的中英文对照。type + JumpTableID 组合唯一标识一个 Trigger。,
+,
+按重要度从高到低排序，重要度 5 的 Trigger 用黄色高亮（攻击/取消/弹反核心），重要度 4 用浅黄。,
+,
+数据来源,
+TAE 文件,c0000.anibnd.dcx 解压后的 a50.tae。包含 213 个动画的事件时间线。
+事件命名,DSAnimStudio 项目的 TAE.Template.SDT.xml（FromSoftware 模板，社区维护）。
+动画命名,c0000.behbnd.dcx 中 HKS 状态机的状态名（CMSG 后缀）。
+Trigger 字典,结合 SDT 模板和社区逆向资料整理。
+,
+注意事项,
+• 动画时长 (duration) 来源于 TAE 内的 times 数组启发式推断，与实际 HKX 动画文件可能有 ±0.1s 误差。,
+• 事件 end 时间可能大于动画时长。这是引擎设计：某些状态（如 SpEffect、防御标志）需要延续到下一段动画的混合期。表中标记为 ★延续。,
+• SpEffectID 的具体效果（霸体/无敌/抗硬直等）需查游戏 regulation.bin 内的 SpEffectParam 表。本文档仅列出 ID。,
+• 部分动画在状态机中有多个映射的状态名（如 a050_120100 同时为 EasyDeflectDmgSmallF 和 StandDeflectEasySmall_V1_F）。本文档显示主要名称。,
